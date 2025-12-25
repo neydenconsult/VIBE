@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#1A2B4C">
+    <meta name="screen-orientation" content="landscape">
+    <title>Agent Renard : Opération Fromage</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        html, body {
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+        
+        body {
+            background-color: #0a0a1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            min-height: -webkit-fill-available;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 100%;
+            max-width: 1280px;
+            aspect-ratio: 16/9;
+        }
+        
+        canvas {
+            display: block;
+            width: 100% !important;
+            height: 100% !important;
+            touch-action: none;
+        }
+        
+        /* Loading screen */
+        #loading {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1A2B4C 0%, #0a0a1a 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            transition: opacity 0.5s ease;
+        }
+        
+        #loading.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        #loading h1 {
+            font-family: 'Georgia', serif;
+            color: #D4A43E;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        #loading p {
+            color: #F5E6C8;
+            font-family: 'Arial', sans-serif;
+            font-size: 1rem;
+        }
+        
+        .loading-bar {
+            width: 300px;
+            height: 20px;
+            background: #0a0a1a;
+            border: 2px solid #D4A43E;
+            border-radius: 10px;
+            margin-top: 1rem;
+            overflow: hidden;
+        }
+        
+        .loading-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #D4A43E, #F5E6C8);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        /* Écran rotation portrait */
+        #rotate-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1A2B4C 0%, #0a0a1a 100%);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            color: #F5E6C8;
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        #rotate-screen .phone-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            animation: rotate-phone 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes rotate-phone {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(90deg); }
+        }
+        
+        #rotate-screen h2 {
+            font-family: 'Georgia', serif;
+            color: #D4A43E;
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+        
+        #rotate-screen p {
+            font-size: 1rem;
+            opacity: 0.8;
+        }
+        
+        /* Afficher en portrait seulement */
+        @media screen and (orientation: portrait) {
+            #rotate-screen {
+                display: flex;
+            }
+            #game-container {
+                display: none;
+            }
+        }
+        
+        /* Bouton fullscreen */
+        #fullscreen-btn {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            width: 44px;
+            height: 44px;
+            background: rgba(26, 43, 76, 0.8);
+            border: 2px solid #D4A43E;
+            border-radius: 8px;
+            color: #D4A43E;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+        
+        #fullscreen-btn:hover, #fullscreen-btn:active {
+            background: rgba(212, 164, 62, 0.3);
+            transform: scale(1.1);
+        }
+        
+        /* Touch feedback */
+        .touch-feedback {
+            position: fixed;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(212, 164, 62, 0.4);
+            pointer-events: none;
+            transform: translate(-50%, -50%) scale(0);
+            animation: touch-ripple 0.4s ease-out forwards;
+            z-index: 10000;
+        }
+        
+        @keyframes touch-ripple {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Écran de rotation (portrait) -->
+    <div id="rotate-screen">
+        <div class="phone-icon">📱</div>
+        <h2>Tournez votre appareil</h2>
+        <p>Ce jeu est optimisé pour le mode paysage</p>
+    </div>
+    
+    <!-- Bouton fullscreen -->
+    <button id="fullscreen-btn" title="Plein écran">⛶</button>
+    
+    <div id="game-container">
+        <div id="loading">
+            <h1>🦊 Agent Renard</h1>
+            <p>Chargement de l'opération...</p>
+            <div class="loading-bar">
+                <div class="loading-bar-fill" id="loading-fill"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Script mobile (avant Phaser) -->
+    <script>
+        // Prévenir le bounce iOS et le zoom
+        document.addEventListener('touchmove', function(e) {
+            if (e.touches.length > 1) e.preventDefault();
+        }, { passive: false });
+        
+        document.addEventListener('gesturestart', function(e) {
+            e.preventDefault();
+        });
+        
+        // Touch feedback visuel
+        document.addEventListener('touchstart', function(e) {
+            const touch = e.touches[0];
+            const feedback = document.createElement('div');
+            feedback.className = 'touch-feedback';
+            feedback.style.left = touch.clientX + 'px';
+            feedback.style.top = touch.clientY + 'px';
+            document.body.appendChild(feedback);
+            
+            setTimeout(() => feedback.remove(), 400);
+        }, { passive: true });
+        
+        // Fullscreen toggle
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        
+        fullscreenBtn.addEventListener('click', function() {
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                const elem = document.documentElement;
+                if (elem.requestFullscreen) {
+                    elem.requestFullscreen();
+                } else if (elem.webkitRequestFullscreen) {
+                    elem.webkitRequestFullscreen();
+                }
+                fullscreenBtn.textContent = '⛶';
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                }
+                fullscreenBtn.textContent = '⛶';
+            }
+        });
+        
+        // Lock orientation si supporté
+        if (screen.orientation && screen.orientation.lock) {
+            screen.orientation.lock('landscape').catch(() => {});
+        }
+    </script>
+    
+    <!-- Phaser 3 -->
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+    
+    <!-- Configuration du jeu -->
+    <script src="js/config.js"></script>
+    
+    <!-- Scènes -->
+    <script src="js/scenes/BootScene.js"></script>
+    <script src="js/scenes/PreloadScene.js"></script>
+    <script src="js/scenes/TitleScene.js"></script>
+    <script src="js/scenes/Scene2_Cuisine.js"></script>
+    <script src="js/scenes/Scene3_VIP.js"></script>
+    <script src="js/scenes/Scene4_Bureau.js"></script>
+    <script src="js/scenes/Scene5_Finale.js"></script>
+    <script src="js/scenes/GameScene.js"></script>
+    
+    <!-- Systèmes -->
+    <script src="js/systems/DialogueSystem.js"></script>
+    <script src="js/systems/InventorySystem.js"></script>
+    <script src="js/systems/AudioManager.js"></script>
+    <script src="js/systems/EffectsManager.js"></script>
+    
+    <!-- Lancement -->
+    <script src="js/main.js"></script>
+</body>
+</html>
