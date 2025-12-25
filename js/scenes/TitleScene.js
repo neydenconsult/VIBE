@@ -14,34 +14,27 @@ class TitleScene extends Phaser.Scene {
         this.add.image(WIDTH / 2, HEIGHT / 2, 'ui_ecran_titre')
             .setDisplaySize(WIDTH, HEIGHT);
         
-        // Zone cliquable pour "JOUER"
-        const playButton = this.add.rectangle(WIDTH / 2, HEIGHT - 100, 200, 60, 0x000000, 0)
+        // Zone cliquable pour "JOUER" - AGRANDIE pour mobile
+        // Position ajustée pour correspondre au bouton visuel
+        const playButton = this.add.rectangle(WIDTH / 2, HEIGHT - 80, 350, 100, 0x000000, 0)
             .setInteractive({ useHandCursor: true });
         
-        // Effet hover
-        playButton.on('pointerover', () => {
-            this.tweens.add({
-                targets: playButton,
-                scaleX: 1.1,
-                scaleY: 1.1,
-                duration: 100
-            });
-        });
+        // Debug: rendre visible temporairement
+        // playButton.setFillStyle(0xFF0000, 0.3);
         
-        playButton.on('pointerout', () => {
-            this.tweens.add({
-                targets: playButton,
-                scaleX: 1,
-                scaleY: 1,
-                duration: 100
-            });
-        });
-        
-        // Lancer le jeu au clic
+        // Lancer le jeu au clic/touch
         playButton.on('pointerdown', () => {
-            // Initialiser l'audio au premier clic (requis par navigateurs)
-            audioManager.init();
-            audioManager.playClick();
+            console.log('🎮 Bouton JOUER pressé !');
+            
+            try {
+                // Initialiser l'audio au premier clic (requis par navigateurs)
+                if (typeof audioManager !== 'undefined') {
+                    audioManager.init();
+                    audioManager.playClick();
+                }
+            } catch(e) {
+                console.warn('Audio init error:', e);
+            }
             
             this.cameras.main.fadeOut(500, 0, 0, 0);
             this.time.delayedCall(500, () => {
@@ -67,14 +60,20 @@ class TitleScene extends Phaser.Scene {
         .setOrigin(0.5);
         
         this.muteButton.on('pointerdown', () => {
-            audioManager.init();
-            audioManager.toggleMute();
-            this.muteButton.setText(audioManager.masterGain?.gain.value > 0 ? '🔊' : '🔇');
+            try {
+                if (typeof audioManager !== 'undefined') {
+                    audioManager.init();
+                    audioManager.toggleMute();
+                    this.muteButton.setText(audioManager.masterGain?.gain.value > 0 ? '🔊' : '🔇');
+                }
+            } catch(e) {
+                console.warn('Audio toggle error:', e);
+            }
         });
         
         // Fade in
         this.cameras.main.fadeIn(1000, 0, 0, 0);
         
-        console.log('🎬 Écran titre affiché');
+        console.log('🎬 Écran titre affiché - Zone JOUER prête');
     }
 }
