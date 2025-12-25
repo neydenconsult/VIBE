@@ -50,7 +50,7 @@ class AudioManager {
         osc.type = 'sine';
         
         gain.gain.setValueAtTime(this.sfxVolume * 0.3, this.context.currentTime);
-        gain.gain.exponentialDecayTo(0.01, this.context.currentTime + 0.1);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.context.currentTime + 0.1);
         
         osc.start(this.context.currentTime);
         osc.stop(this.context.currentTime + 0.1);
